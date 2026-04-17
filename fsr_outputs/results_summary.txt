@@ -1,0 +1,20 @@
+FSR (CVPR 2023) — Results Summary
+====================================
+Model     : resnet18
+Dataset   : CIFAR10
+Save name : cifar10_resnet18
+Epoch     : final
+Weights   : /teamspace/studios/this_studio/FSR/weights/cifar10/resnet18/cifar10_resnet18.pth
+
+Robustness (ε = 8/255, first 10 batches):
+  Clean Accuracy  : 83.26%
+  FGSM Accuracy   : 57.26%
+  PGD-20 Accuracy : 50.54%
+  PGD-50 Accuracy : 49.84%
+
+Output files:
+  /teamspace/studios/this_studio/FSR/fsr_outputs/robustness_bar.png
+  /teamspace/studios/this_studio/FSR/fsr_outputs/attention_maps.png
+  /teamspace/studios/this_studio/FSR/fsr_outputs/feature_norms.png
+  /teamspace/studios/this_studio/FSR/fsr_outputs/results_summary.txt
+  /teamspace/studios/this_studio/FSR/fsr_outputs/ppt_variables.py

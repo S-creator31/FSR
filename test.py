@@ -121,7 +121,7 @@ class Classifier(BaseModelDNN):
 
 def main():
     model = Classifier()
-    checkpoint = torch.load('./weights/{}/{}/{}.pth'.format(args.dataset, args.model, args.load_name, map_location=device))
+    checkpoint = torch.load('./weights/{}/{}/{}.pth'.format(args.dataset, args.model, args.load_name), map_location=device)
     model.net.load_state_dict(checkpoint)
     model.net.eval()
 

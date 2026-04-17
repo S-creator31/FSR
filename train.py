@@ -1,3 +1,4 @@
+# <<RESUME_PATCH_APPLIED>>
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -38,6 +39,8 @@ parser.add_argument('--eps', type=float, default=8., help='perturbation constrai
 parser.add_argument('--alpha', type=float, default=0.25, help='step size alpha')
 parser.add_argument('--tau', type=float, default=0.1, help='tau for Gumbel softmax')
 parser.add_argument('--device', type=int, help='device id')
+parser.add_argument('--resume_ckpt', type=str, default='',
+                    help='path to checkpoint to resume from (auto-detected if empty)')
 args = parser.parse_args()
 
 device = 'cuda:{}'.format(args.device) if torch.cuda.is_available() else 'cpu'
@@ -103,6 +106,7 @@ cudnn.benchmark = True
 
 criterion = nn.CrossEntropyLoss(reduction='mean')
 optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=0.9, weight_decay=5e-4)
+scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[75, 90], gamma=0.1)
 
 
 def get_pred(out, labels):
@@ -230,8 +234,35 @@ def test(epoch):
 
     if not os.path.exists('./weights/{}/{}/'.format(args.dataset, args.model)):
         os.makedirs('./weights/{}/{}/'.format(args.dataset, args.model))
+    scheduler.step()
+    # ── Per-epoch checkpoint (enables resume on Lightning AI) ──────
+    _ckpt_dir = os.path.join('./weights', args.dataset, args.model)
+    os.makedirs(_ckpt_dir, exist_ok=True)
+    _ckpt_save_path = os.path.join(_ckpt_dir, args.save_name + '_ckpt.pth')
+    torch.save({
+        'epoch'    : epoch,
+        'model'    : net.state_dict(),
+        'optimizer': optimizer.state_dict(),
+    }, _ckpt_save_path)
+    print(f'[Checkpoint] ✅ Epoch {epoch}/{args.epoch} saved → {_ckpt_save_path}')
+    # ───────────────────────────────────────────────────────────────
     torch.save(net.state_dict(), './weights/{}/{}/{}.pth'.format(args.dataset, args.model, args.save_name))
 
+
+# ── Resume from checkpoint if available ──────────────────────────────
+_ckpt_path = args.resume_ckpt or os.path.join(
+    './weights', args.dataset, args.model,
+    args.save_name + '_ckpt.pth')
+start_epoch = 1
+if os.path.exists(_ckpt_path):
+    print(f'[Resume] Loading checkpoint: {_ckpt_path}')
+    _ckpt = torch.load(_ckpt_path, map_location=device)
+    net.load_state_dict(_ckpt['model'])
+    optimizer.load_state_dict(_ckpt['optimizer'])
+    start_epoch = _ckpt['epoch'] + 1
+    print(f'[Resume] ✅ Resuming from epoch {start_epoch} / {args.epoch}')
+else:
+    print('[Resume] No checkpoint found — starting fresh from epoch 1')
 
 for epoch in range(start_epoch, args.epoch + 1):
     train(epoch)

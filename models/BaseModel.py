@@ -4,14 +4,14 @@ CIFS : https://github.com/HanshuYAN/CIFS
 '''
 
 
-from abc import ABC, abstractclassmethod
+from abc import ABC, abstractmethod
 
 
 class BaseModelDNN(ABC):
     def __init__(self) -> None:
         pass
 
-    @abstractclassmethod
+    @abstractmethod
     def predict(self) -> None:
         pass
 
